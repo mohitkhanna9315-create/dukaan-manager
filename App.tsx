@@ -119,7 +119,8 @@ const TRANSLATIONS = {
     account: 'Account Settings',
     dark_mode: 'Dark Mode',
     light_mode: 'Light Mode',
-    delete_customer: 'Customer Delete'
+    delete_customer: 'Customer Delete',
+    install_app: 'App Install Karein'
   },
   en: {
     inventory: 'Inventory',
@@ -154,7 +155,8 @@ const TRANSLATIONS = {
     logout: 'Logout',
     account: 'Account Settings',
     dark_mode: 'Dark Mode',
-    light_mode: 'Light Mode'
+    light_mode: 'Light Mode',
+    install_app: 'Install App'
   }
 };
 
@@ -217,6 +219,7 @@ export default function App() {
   const [isOrderListPageOpen, setIsOrderListPageOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -232,6 +235,27 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('language', language);
   }, [language]);
+
+  // --- PWA Effect ---
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as any);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as any);
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setToast({ message: 'App install ho rahi hai!', type: 'success' });
+    }
+    setDeferredPrompt(null);
+    setIsMenuOpen(false);
+  };
 
   // --- Theme Effect ---
   useEffect(() => {
@@ -1040,6 +1064,18 @@ export default function App() {
                         </div>
                         <span className="font-medium">{t('edit_shop')}</span>
                       </button>
+
+                      {deferredPrompt && (
+                        <button 
+                          onClick={handleInstallApp}
+                          className="w-full flex items-center gap-3 p-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl transition-colors"
+                        >
+                          <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
+                            <Download size={18} />
+                          </div>
+                          <span className="font-medium">{t('install_app')}</span>
+                        </button>
+                      )}
 
                       <div className="h-px bg-slate-200/50 dark:bg-slate-700/50 my-2 mx-3" />
 
