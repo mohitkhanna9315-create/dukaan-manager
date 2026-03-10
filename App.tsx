@@ -122,7 +122,8 @@ const TRANSLATIONS = {
     delete_customer: 'Customer Delete',
     install_app: 'App Install Karein',
     low_stock_threshold: 'Low Stock Limit',
-    download_app: 'Mobile App Download'
+    download_app: 'Mobile App Download',
+    download_link: 'Download Link (URL)'
   },
   en: {
     inventory: 'Inventory',
@@ -160,7 +161,8 @@ const TRANSLATIONS = {
     light_mode: 'Light Mode',
     install_app: 'Install App',
     low_stock_threshold: 'Low Stock Threshold',
-    download_app: 'Download Mobile App'
+    download_app: 'Download Mobile App',
+    download_link: 'Download Link (URL)'
   }
 };
 
@@ -218,6 +220,8 @@ export default function App() {
   const [shopName, setShopName] = useState(() => localStorage.getItem('shopName') || 'Dukaan Manager');
   const [isShopNameModalOpen, setIsShopNameModalOpen] = useState(false);
   const [newShopName, setNewShopName] = useState(shopName);
+  const [downloadLink, setDownloadLink] = useState(() => localStorage.getItem('downloadLink') || (import.meta as any).env.VITE_MOBILE_APP_URL || '');
+  const [newDownloadLink, setNewDownloadLink] = useState(downloadLink);
   const [language, setLanguage] = useState<'en' | 'hi'>(() => (localStorage.getItem('language') as 'en' | 'hi') || 'hi');
   const [isListening, setIsListening] = useState(false);
   const [isBusinessHealthOpen, setIsBusinessHealthOpen] = useState(false);
@@ -1072,30 +1076,34 @@ export default function App() {
                         <span className="font-medium">{t('edit_shop')}</span>
                       </button>
 
-                      {deferredPrompt && (
-                        <button 
-                          onClick={handleInstallApp}
-                          className="w-full flex items-center gap-3 p-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl transition-colors"
-                        >
-                          <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
-                            <Download size={18} />
-                          </div>
-                          <span className="font-medium">{t('install_app')}</span>
-                        </button>
-                      )}
+                      {(deferredPrompt || downloadLink) && (
+                        <div className="space-y-1">
+                          {deferredPrompt && (
+                            <button 
+                              onClick={handleInstallApp}
+                              className="w-full flex items-center gap-3 p-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl transition-colors"
+                            >
+                              <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
+                                <Download size={18} />
+                              </div>
+                              <span className="font-medium">{t('install_app')}</span>
+                            </button>
+                          )}
 
-                      {(import.meta as any).env.VITE_MOBILE_APP_URL && (
-                        <a 
-                          href={(import.meta as any).env.VITE_MOBILE_APP_URL}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full flex items-center gap-3 p-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-2xl transition-colors"
-                        >
-                          <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                            <Download size={18} />
-                          </div>
-                          <span className="font-bold">{t('download_app')}</span>
-                        </a>
+                          {downloadLink && (
+                            <a 
+                              href={downloadLink}
+                              download
+                              onClick={() => setToast({ message: 'Download shuru ho raha hai...', type: 'success' })}
+                              className="w-full flex items-center gap-3 p-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-2xl transition-colors"
+                            >
+                              <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                                <Download size={18} />
+                              </div>
+                              <span className="font-bold">{t('download_app')}</span>
+                            </a>
+                          )}
+                        </div>
                       )}
 
                       <div className="h-px bg-slate-200/50 dark:bg-slate-700/50 my-2 mx-3" />
@@ -2251,22 +2259,39 @@ export default function App() {
               </div>
               
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-500 dark:text-slate-400 ml-1">Dukaan ka Naam</label>
-                  <input 
-                    type="text"
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 dark:text-white"
-                    value={newShopName}
-                    onChange={(e) => setNewShopName(e.target.value)}
-                    placeholder="Dukaan ka naam likhein..."
-                  />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-500 dark:text-slate-400 ml-1">Dukaan ka Naam</label>
+                    <input 
+                      type="text"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 dark:text-white"
+                      value={newShopName}
+                      onChange={(e) => setNewShopName(e.target.value)}
+                      placeholder="Dukaan ka naam likhein..."
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-500 dark:text-slate-400 ml-1">{t('download_link')}</label>
+                    <input 
+                      type="text"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 dark:text-white"
+                      value={newDownloadLink}
+                      onChange={(e) => setNewDownloadLink(e.target.value)}
+                      placeholder="https://example.com/app.apk"
+                    />
+                    <p className="text-[10px] text-slate-400 ml-1">Yahan apna app download link paste karein.</p>
+                  </div>
                 </div>
 
                 <button 
                   onClick={() => {
                     setShopName(newShopName);
+                    setDownloadLink(newDownloadLink);
                     localStorage.setItem('shopName', newShopName);
+                    localStorage.setItem('downloadLink', newDownloadLink);
                     setIsShopNameModalOpen(false);
+                    setToast({ message: 'Settings save ho gayi hain!', type: 'success' });
                   }}
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-indigo-200 dark:shadow-none active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
@@ -2274,13 +2299,13 @@ export default function App() {
                   Save Karein
                 </button>
 
-                {(import.meta as any).env.VITE_MOBILE_APP_URL && (
+                {downloadLink && (
                   <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
                     <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 text-center uppercase tracking-widest">Mobile App</p>
                     <a 
-                      href={(import.meta as any).env.VITE_MOBILE_APP_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={downloadLink}
+                      download
+                      onClick={() => setToast({ message: 'Download shuru ho raha hai...', type: 'success' })}
                       className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-4 rounded-2xl font-black text-lg shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3"
                     >
                       <Download size={20} />
@@ -2315,16 +2340,16 @@ export default function App() {
       </div>
 
       {/* Mobile Download Button */}
-      {(import.meta as any).env.VITE_MOBILE_APP_URL && (
+      {downloadLink && (
         <motion.div 
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="fixed bottom-24 right-6 z-50 sm:hidden"
         >
           <a 
-            href={(import.meta as any).env.VITE_MOBILE_APP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={downloadLink}
+            download
+            onClick={() => setToast({ message: 'Download shuru ho raha hai...', type: 'success' })}
             className="w-14 h-14 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
           >
             <Download size={24} />
