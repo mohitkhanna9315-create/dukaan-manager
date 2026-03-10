@@ -120,7 +120,9 @@ const TRANSLATIONS = {
     dark_mode: 'Dark Mode',
     light_mode: 'Light Mode',
     delete_customer: 'Customer Delete',
-    install_app: 'App Install Karein'
+    install_app: 'App Install Karein',
+    low_stock_threshold: 'Low Stock Limit',
+    download_app: 'Mobile App Download'
   },
   en: {
     inventory: 'Inventory',
@@ -156,7 +158,9 @@ const TRANSLATIONS = {
     account: 'Account Settings',
     dark_mode: 'Dark Mode',
     light_mode: 'Light Mode',
-    install_app: 'Install App'
+    install_app: 'Install App',
+    low_stock_threshold: 'Low Stock Threshold',
+    download_app: 'Download Mobile App'
   }
 };
 
@@ -196,7 +200,8 @@ export default function App() {
     price: '',
     quantity: '',
     unit: 'Quantity' as Unit,
-    expiryDate: ''
+    expiryDate: '',
+    lowStockThreshold: '5'
   });
 
   const [customerFormData, setCustomerFormData] = useState({
@@ -455,11 +460,12 @@ export default function App() {
         price: product.price.toString(),
         quantity: product.quantity.toString(),
         unit: product.unit || 'Quantity',
-        expiryDate: product.expiryDate || ''
+        expiryDate: product.expiryDate || '',
+        lowStockThreshold: (product.lowStockThreshold || 5).toString()
       });
     } else {
       setEditingProduct(null);
-      setFormData({ name: '', category: 'Rashan', price: '', quantity: '', unit: 'Quantity', expiryDate: '' });
+      setFormData({ name: '', category: 'Rashan', price: '', quantity: '', unit: 'Quantity', expiryDate: '', lowStockThreshold: '5' });
     }
     setIsModalOpen(true);
   };
@@ -478,7 +484,8 @@ export default function App() {
       quantity: parseInt(formData.quantity) || 0,
       unit: formData.unit,
       ownerId: user.uid,
-      expiryDate: formData.expiryDate
+      expiryDate: formData.expiryDate,
+      lowStockThreshold: parseInt(formData.lowStockThreshold) || 5
     };
 
     try {
@@ -488,7 +495,7 @@ export default function App() {
       const currentFormData = { ...formData };
       const currentEditingProduct = editingProduct;
       
-      setFormData({ name: '', category: 'Rashan', price: '', quantity: '', unit: 'Quantity', expiryDate: '' });
+      setFormData({ name: '', category: 'Rashan', price: '', quantity: '', unit: 'Quantity', expiryDate: '', lowStockThreshold: '5' });
       setEditingProduct(null);
       setIsSyncing(false);
 
@@ -852,7 +859,7 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  const lowStockCount = products ? products.filter(p => p.quantity < 5).length : 0;
+  const lowStockCount = products ? products.filter(p => p.quantity < (p.lowStockThreshold || 5)).length : 0;
   const totalLena = customers ? customers.reduce((acc, c) => acc + (c.balance > 0 ? c.balance : 0), 0) : 0;
   const totalDena = customers ? customers.reduce((acc, c) => acc + (c.balance < 0 ? Math.abs(c.balance) : 0), 0) : 0;
   const netBalance = totalLena - totalDena;
@@ -1075,6 +1082,20 @@ export default function App() {
                           </div>
                           <span className="font-medium">{t('install_app')}</span>
                         </button>
+                      )}
+
+                      {(import.meta as any).env.VITE_MOBILE_APP_URL && (
+                        <a 
+                          href={(import.meta as any).env.VITE_MOBILE_APP_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full flex items-center gap-3 p-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-2xl transition-colors"
+                        >
+                          <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                            <Download size={18} />
+                          </div>
+                          <span className="font-bold">{t('download_app')}</span>
+                        </a>
                       )}
 
                       <div className="h-px bg-slate-200/50 dark:bg-slate-700/50 my-2 mx-3" />
@@ -1340,7 +1361,7 @@ export default function App() {
                           exit={{ opacity: 0, scale: 0.95 }}
                           key={product.id}
                           className={`bg-white dark:bg-slate-900 p-3 rounded-2xl shadow-sm border-l-4 transition-all ${
-                            product.quantity < 5 ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-indigo-500'
+                            product.quantity < (product.lowStockThreshold || 5) ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-indigo-500'
                           }`}
                         >
                           <div className="flex justify-between items-start mb-2">
@@ -1821,6 +1842,18 @@ export default function App() {
                     </div>
                   </div>
 
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">{t('low_stock_threshold')}</label>
+                    <input 
+                      required
+                      type="number"
+                      placeholder="5"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-slate-800 dark:text-white"
+                      value={formData.lowStockThreshold}
+                      onChange={(e) => setFormData({...formData, lowStockThreshold: e.target.value})}
+                    />
+                  </div>
+
                   <button 
                     type="submit"
                     disabled={isSyncing}
@@ -2152,9 +2185,9 @@ export default function App() {
               </div>
               
               <div className="space-y-4">
-                {products && products.filter(p => p.quantity < 5).length > 0 ? (
+                {products && products.filter(p => p.quantity < (p.lowStockThreshold || 5)).length > 0 ? (
                   <div className="grid gap-3">
-                    {products.filter(p => p.quantity < 5).map(product => (
+                    {products.filter(p => p.quantity < (p.lowStockThreshold || 5)).map(product => (
                       <div key={product.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl">
                         <div>
                           <p className="font-bold text-slate-800 dark:text-white">{product.name}</p>
@@ -2179,7 +2212,7 @@ export default function App() {
               
               <button 
                 onClick={() => {
-                  const list = products?.filter(p => p.quantity < 5).map(p => `- ${p.name} (${p.quantity} ${p.unit} left)`).join('\n');
+                  const list = products?.filter(p => p.quantity < (p.lowStockThreshold || 5)).map(p => `- ${p.name} (${p.quantity} ${p.unit} left)`).join('\n');
                   const message = `Order List:\n${list}`;
                   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
                   window.open(whatsappUrl, '_blank');
@@ -2240,6 +2273,21 @@ export default function App() {
                   <Save size={20} />
                   Save Karein
                 </button>
+
+                {(import.meta as any).env.VITE_MOBILE_APP_URL && (
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 text-center uppercase tracking-widest">Mobile App</p>
+                    <a 
+                      href={(import.meta as any).env.VITE_MOBILE_APP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-4 rounded-2xl font-black text-lg shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                    >
+                      <Download size={20} />
+                      {t('download_app')}
+                    </a>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>
@@ -2265,6 +2313,24 @@ export default function App() {
           <p className="text-lg font-black text-red-600 dark:text-red-400">{lowStockCount}</p>
         </div>
       </div>
+
+      {/* Mobile Download Button */}
+      {(import.meta as any).env.VITE_MOBILE_APP_URL && (
+        <motion.div 
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="fixed bottom-24 right-6 z-50 sm:hidden"
+        >
+          <a 
+            href={(import.meta as any).env.VITE_MOBILE_APP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-14 h-14 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
+          >
+            <Download size={24} />
+          </a>
+        </motion.div>
+      )}
     </div>
   );
 }
